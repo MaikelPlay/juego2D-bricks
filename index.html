@@ -1,0 +1,229 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Bloques</title>
+    <style>
+      * {
+        padding: 0;
+        margin: 0;
+      }
+      body {
+        width: 100%;
+        height: 100vh; /* Asegura que el cuerpo ocupe toda la altura de la pantalla */       
+        display: flex; /* Centra el contenedor en la pantalla */
+        justify-content: center;
+        align-items: center;
+      }
+      .contenedor1{
+        background-image: url('night.jpg');
+        background-size: cover; /* Asegura que la imagen de fondo cubra todo el contenedor */
+        background-position: center; /* Centra la imagen de fondo */
+        display: flex;
+        align-content: center;
+        justify-content: flex-end;
+        width: 100%; /* Asegura que el contenedor ocupe todo el ancho de la pantalla */
+        height: 100vh; /* Asegura que el contenedor ocupe toda la altura de la pantalla */
+      }
+      canvas {  
+        display: block;
+        margin: 0 auto;   
+      }
+    </style>
+    
+  </head>
+  <body>
+    <section class="contenedor1">
+      <canvas id="myCanvas" width="1280" height="600"></canvas>
+    </section>
+   
+
+    <script>
+      var canvas = document.getElementById("myCanvas");
+      canvas.width = window.innerWidth;//Para que ocupe todo el ancho de pantalla
+      canvas.height = window.innerHeight;//Para que ocupe todo el largo de pantalla
+      var ctx = canvas.getContext("2d");
+      var ballRadius = 10;
+      var x = canvas.width/2;
+      var y = canvas.height-30;
+      var dx = 5;//Velocidad horizontal
+      var dy = -5;//Velocidad vertical
+      var paddleHeight = 10;//Altura de la barra
+      var paddleWidth = 75;//Anchura de la barra
+      var paddleX = (canvas.width-paddleWidth)/2;
+      var rightPressed = false;
+      var leftPressed = false;
+
+      var brickRowCount = 5;
+      var brickColumnCount = 14;
+      var brickWidth = 75;//Anchura de los ladrillos
+      var brickHeight = 20;//Altura de los ladrillos
+      var brickPadding = 10;
+      var brickOffsetTop = 30;
+      var brickOffsetLeft = 80;
+
+      var score = 0;
+      
+      var lives = 3;
+
+      var bricks = [];//Matriz de ladrillos
+        for (c = 0; c < brickColumnCount; c++) 
+        {
+        bricks[c] = [];
+        for (r = 0; r < brickRowCount; r++) 
+        {
+            bricks[c][r] = { x: 0, y: 0, status: 1};
+        }
+        }  
+
+      document.addEventListener("keydown", keyDownHandler, false);//escucha el evento de pulsar una tecla
+      document.addEventListener("keyup", keyUpHandler, false);//escucha el evento de dejar de pulsar una tecla
+      document.addEventListener("mousemove", mouseMoveHandler, false);//escucha el evento de mover el ratón
+
+     
+      function mouseMoveHandler(e)//movimiento de la tabla con el mousemove 
+      {
+        var relativeX = e.clientX - canvas.offsetLeft;
+        if (relativeX > 0 && relativeX < canvas.width) {
+          paddleX = relativeX - paddleWidth / 2;
+        }
+      }
+      function keyDownHandler(e) {
+          if(e.keyCode == 39) {
+              rightPressed = true;
+          }
+          else if(e.keyCode == 37) {
+              leftPressed = true;
+          }
+      }
+      function keyUpHandler(e) {
+          if(e.keyCode == 39) {
+              rightPressed = false;
+          }
+          else if(e.keyCode == 37) {
+              leftPressed = false;
+          }
+      }
+
+      function collisionDetection() {
+  for (c = 0; c < brickColumnCount; c++) {
+    for (r = 0; r < brickRowCount; r++) {
+      var b = bricks[c][r];
+      if (b.status == 1) {
+        if (
+          x > b.x &&
+          x < b.x + brickWidth &&
+          y > b.y &&
+          y < b.y + brickHeight
+        ) {
+          dy = -dy;
+          b.status = 0;
+          score++; // Incrementa la puntuación total del juego
+          if (score == brickRowCount * brickColumnCount) {
+            alert("YOU WIN, CONGRATULATIONS!");
+            document.location.reload();
+          }
+        }
+      }
+    }
+  }
+}
+      function drawScore() {
+          ctx.font = "16px Arial";
+          ctx.fillStyle = "yellow";
+          ctx.fillText("PUNTUACION: " + score, 8, 20);
+        }
+        function drawLives() {
+          ctx.font = "16px Arial";
+          ctx.fillStyle = "red";
+          ctx.fillText("VIDAS: " + lives, canvas.width - 65, 20);
+        }
+
+      function drawBall() 
+      {
+        ctx.beginPath();
+        ctx.arc(x, y, ballRadius, 0, Math.PI * 2);
+        ctx.fillStyle = "white";
+        ctx.fill();
+        ctx.closePath(); 
+      }
+      function drawPaddle() 
+      {
+        ctx.beginPath();
+        ctx.rect(paddleX, canvas.height - paddleHeight, paddleWidth, paddleHeight);
+        ctx.fillStyle = "#0095DD";
+        ctx.fill();
+        ctx.closePath();
+      }
+
+      function drawBricks() {
+        for (c = 0; c < brickColumnCount; c++) {
+            for (r = 0; r < brickRowCount; r++) {
+            if (bricks[c][r].status == 1) {
+            var brickX = c * (brickWidth + brickPadding) + brickOffsetLeft;
+            var brickY = r * (brickHeight + brickPadding) + brickOffsetTop;
+            bricks[c][r].x = brickX;
+            bricks[c][r].y = brickY;
+            ctx.beginPath();
+            ctx.rect(brickX, brickY, brickWidth, brickHeight);
+            ctx.fillStyle = "yellow";
+            ctx.fill();
+            ctx.closePath();
+            }
+        }
+        }
+    }
+      function draw()
+        {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);//borra el rastro de la bola antes de dibujarla
+          drawBricks();
+          drawBall();
+          drawPaddle();
+          drawScore();
+          drawLives();
+          collisionDetection();
+          
+          
+          if (x + dx > canvas.width - ballRadius || x + dx < ballRadius) {
+              dx = -dx;
+            }
+            if (y + dy < ballRadius) {
+            dy = -dy;
+
+            } else if (y + dy > canvas.height - ballRadius) {
+            if (x > paddleX && x < paddleX + paddleWidth) {//Detecta colision entre la bola y la barra
+                dy = -dy;
+
+            } else {
+              lives--;
+              if (!lives) {
+                alert("GAME OVER");
+                document.location.reload();
+              } else {
+                x = canvas.width / 2;
+                y = canvas.height - 30;
+                dx = 5;
+                dy = -5;
+                paddleX = (canvas.width - paddleWidth) / 2;
+              }
+            }
+            }
+
+            if(rightPressed && paddleX < canvas.width-paddleWidth) {
+                paddleX += 7;
+            }
+            else if(leftPressed && paddleX > 0) {
+                paddleX -= 7;
+            }
+
+          x += dx;//incrementa la direccion de la bola
+          y += dy;//incrementa la direccion de la bola
+          requestAnimationFrame(draw);//en lugar de hacerlo cada 10 milisegundos, dejamos que sea el navegador quien decida cada cuánto tiempo. El navegador sincronizará el refresco, es decir, el número de fotogramas por segundo
+        }
+
+        draw();  
+        
+   
+    </script>
+  </body>
+</html>
